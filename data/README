@@ -1,0 +1,98 @@
+This package contains one data set in two format described below.
+
+Use any portion of this data and do something cool with it! There's no particular problem to be solved, but a good project will show a command of data visualization to find patterns or relations in the data. We don't expect anything too complex, this is designed to be something you could do in a few hours or over the course of an evening. 
+
+The fields described below are for your convenience, but you don't need to use all of them. Take a look through what's available, think of something that you could do with the data, and go for it!
+
+Once complete please send the resulting visualization(s) and code along with a brief description of what you found.
+
+If you have any questions feel free to reach out to vlad@fiscalnote.com.
+
+
+==================
+Bill data
+==================
+The bill data set contains a sample of 2000 rows each representing a Congressional bill with date of introduction from 2001 to 2014. Each row has a unique id representing the document, date of introduction, a YearMonth date of introduction, and the top 5 topics assigned to that bill. The topics are presented for convenience for each bill as five distinct fields, with 1 being the highest scoring topic, but all are relevant to the bill so can be treated as equivalent if you prefer.
+
+For your convenience the data is presented in two different json formats. The data in each file is the same as the other file, so you only need to use one of them.
+
+==================
+Schema
+==================
+The schema of bill_topics_column.json is 
+{
+    "id": dictionary of row ids running from 0-1999 with value being the unique identifier of the bill
+    "date": dictionary of row ids running from 0-1999 with value being the date in encoded format
+    "YearMonth": dictionary of row ids running from 0-1999 with value being the only the joined Year and Month of introduction from "date" in string format
+    "1": dictionary of row ids running from 0-1999 with value being the 1st Topic assigned to the bill 
+    "2": dictionary of row ids running from 0-1999 with value being the 2nd Topic assigned to the bill 
+    "3": dictionary of row ids running from 0-1999 with value being the 3rd Topic assigned to the bill 
+    "4": dictionary of row ids running from 0-1999 with value being the 4th Topic assigned to the bill 
+    "5": dictionary of row ids running from 0-1999 with value being the 5th Topic assigned to the bill 
+}
+
+Sample with 1 row: 
+
+{
+    "id": {
+        "0": 11258171
+    },
+    "date": {
+        "0": 1190851200000
+    },
+    "YearMonth": {
+        "0": 200709
+    },
+    "1": {
+        "0": "Taxes"
+    },
+    "2": {
+        "0": "Tax Reform"
+    },
+    "3": {
+        "0": "Income Tax"
+    },
+    "4": {
+        "0": "Tax Credit"
+    },
+    "5": {
+        "0": "Government Administration"
+    }
+}
+
+==================
+
+The schema of bill_topics_list.json is a list of dictionaries, one dictionary per row, each dictionary containing
+{
+    "id": the unique identifier of the bill
+    "date": the date in encoded format
+    "YearMonth": the joined Year and Month of introduction from "date" in string format
+    "1": the 1st Topic assigned to the bill
+    "2": the 2nd Topic assigned to the bill
+    "3": the 3rd Topic assigned to the bill
+    "4": the 4th Topic assigned to the bill
+    "5": the 5th Topic assigned to the bill
+}
+
+Sample with 1 row:
+
+[{
+    "id": 11258171,
+    "date": 1190851200000,
+    "YearMonth": 200709,
+    "1": "Taxes",
+    "2": "Tax Reform",
+    "3": "Income Tax",
+    "4": "Tax Credit",
+    "5": "Government Administration"
+}]
+
+
+==================
+==================
+==================
+
+
+questions
+=========
+contact vlad@fiscalnote.com
