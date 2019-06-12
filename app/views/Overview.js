@@ -5,6 +5,11 @@ import routes from '../router/routes'
 import { Card, CardHeader, CardContent, Grid, Typography, Select, OutlinedInput, MenuItem, FormControl, FormHelperText} from '@material-ui/core'
 import {Bar} from 'react-chartjs-2';
 
+
+
+const monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const weekdayLabels = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+
 class Overview extends React.Component {
 	constructor(props){
 		super(props);
@@ -12,6 +17,7 @@ class Overview extends React.Component {
 		this.state = {
 				bill_topics_column: [],
 				selectedTopicLevel: 'all',
+				loading: true,
 		}
 		this.getData()
 	}
@@ -23,7 +29,7 @@ class Overview extends React.Component {
 	getData = () => {
 		fetch("./data/bill_topics_list.json")
 			.then(res => res.json())
-			.then(data => this.setState({bill_topics_column:data.map(this.prepareBillTopicsItem)}))
+			.then(data => this.setState({bill_topics_column:data.map(this.prepareBillTopicsItem)},this.buildChartStatistics) )
 	}
 	buildChartTemplate = (title, labels, data) => {
 		return {
@@ -53,6 +59,171 @@ class Overview extends React.Component {
 		  ]
 		};
 	}
+	buildYearMonthStatistics = () => {
+		let uniqueYearMonth = [ ...new Set(this.state.bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort();
+		return {
+			yearMonth: {
+				'uniqueValues': uniqueYearMonth
+			}
+		}
+	}
+	buildYearStatistics = () => {
+		let uniqueYear = [ ...new Set(this.state.bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) )) ].sort(this.sortNumber);
+		let countByYear = uniqueYear.map( year => this.state.bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) == year).length );
+		let minCountByYear = Math.min.apply(null, countByYear);
+		let maxCountByYear = Math.max.apply(null, countByYear);
+		let minCountByYear_label = uniqueYear[countByYear.indexOf(minCountByYear)]
+		let maxCountByYear_label = uniqueYear[countByYear.indexOf(maxCountByYear)]
+
+		let uniqueYearFormatted = [ ...new Set(this.state.bill_topics_column.map( billTopic => this.formatDateYear(billTopic['dateObj']) )) ].sort(this.sortNumber);
+		let countByYearFormatted = uniqueYearFormatted.map( year => this.state.bill_topics_column.filter(billTopic => this.formatDateYear(billTopic['dateObj']) == year).length );
+		let minCountByYearFormatted = Math.min.apply(null, countByYearFormatted);
+		let maxCountByYearFormatted = Math.max.apply(null, countByYearFormatted);
+		let minCountByYearFormatted_label = uniqueYearFormatted[countByYearFormatted.indexOf(minCountByYearFormatted)]
+		let maxCountByYearFormatted_label = uniqueYearFormatted[countByYearFormatted.indexOf(maxCountByYearFormatted)]
+		return {
+			year: {
+				'uniqueValues': uniqueYear,
+				'countByUnique': countByYear,
+				'minValue': minCountByYear,
+				'maxValue': maxCountByYear,
+				'minValue_label': minCountByYear_label,
+				'maxValue_label': maxCountByYear_label,
+			},
+			formattedYear:{
+				'uniqueValues': uniqueYearFormatted,
+				'countByUnique': countByYearFormatted,
+				'minValue': minCountByYearFormatted,
+				'maxValue': maxCountByYearFormatted,
+				'minValue_label': minCountByYearFormatted_label,
+				'maxValue_label': maxCountByYearFormatted_label,
+			}
+		}
+	}
+	buildMonthStatistics = () => {
+		let sortMonths = (a,b) => {
+			return monthLabels.indexOf(a) - monthLabels.indexOf(b)
+		}
+
+		let uniqueMonth = [ ...new Set(this.state.bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4))) ) ].sort(this.sortNumber);
+		let countByMonth = uniqueMonth.map( month => this.state.bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4)) == month).length );
+		let minCountByMonth = Math.min.apply(null, countByMonth);
+		let maxCountByMonth = Math.max.apply(null, countByMonth);
+		let minCountByMonth_label = monthLabels[countByMonth.indexOf(minCountByMonth)]
+		let maxCountByMonth_label = monthLabels[countByMonth.indexOf(maxCountByMonth)]
+
+		let uniqueMonthFormatted = [ ...new Set(this.state.bill_topics_column.map( billTopic => this.formatDateMonth(billTopic['dateObj']) )) ].sort(sortMonths);
+		let countByMonthFormatted = uniqueMonthFormatted.map( month => this.state.bill_topics_column.filter(billTopic => this.formatDateMonth(billTopic['dateObj']) == month).length );
+		let minCountByMonthFormatted = Math.min.apply(null, countByMonthFormatted);
+		let maxCountByMonthFormatted = Math.max.apply(null, countByMonthFormatted);
+		let minCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(minCountByMonthFormatted)]
+		let maxCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(maxCountByMonthFormatted)]
+		return {
+			month: {
+				'uniqueValues': uniqueMonth,
+				'countByUnique': countByMonth,
+				'minValue': minCountByMonth,
+				'maxValue': maxCountByMonth,
+				'minValue_label': minCountByMonth_label,
+				'maxValue_label': maxCountByMonth_label,
+			},
+			formattedMonth:{
+				'uniqueValues': uniqueMonthFormatted,
+				'countByUnique': countByMonthFormatted,
+				'minValue': minCountByMonthFormatted,
+				'maxValue': maxCountByMonthFormatted,
+				'minValue_label': minCountByMonthFormatted_label,
+				'maxValue_label': maxCountByMonthFormatted_label,
+			}
+		}
+	}
+	buildWeekdayStatistics = () => {
+		let sortWeekdays = (a,b) => {
+			return weekdayLabels.indexOf(a) - weekdayLabels.indexOf(b)
+		}
+		let uniqueWeekdayFormatted = [ ...new Set(this.state.bill_topics_column.map( billTopic => this.formatDateWeekday(billTopic['dateObj']) )) ].sort(this.sortNumber).sort(sortWeekdays);
+		let countByWeekdayFormatted = uniqueWeekdayFormatted.map( weekday => this.state.bill_topics_column.filter(billTopic => this.formatDateWeekday(billTopic['dateObj']) == weekday).length );
+		let minCountByWeekdayFormatted = Math.min.apply(null, countByWeekdayFormatted);
+		let maxCountByWeekdayFormatted = Math.max.apply(null, countByWeekdayFormatted);
+		let minCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(minCountByWeekdayFormatted)]
+		let maxCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(maxCountByWeekdayFormatted)]
+		return {
+			weekday:{
+				'uniqueValues': uniqueWeekdayFormatted,
+				'countByUnique': countByWeekdayFormatted,
+				'minValue': minCountByWeekdayFormatted,
+				'maxValue': maxCountByWeekdayFormatted,
+				'minValue_label': minCountByWeekdayFormatted_label,
+				'maxValue_label': maxCountByWeekdayFormatted_label,
+			}
+		}
+	}
+	buildTopicStatistics = () => {
+		// largest number first
+		let sortTopics = (a,b) => {
+			return b.count - a.count
+		}
+		let getTopicMetrics = (countByTopicArr) => {
+			let countByTopic = countByTopicArr.sort(sortTopics)
+			return {
+				'countByUniqueArr': countByTopic,
+				'minValue': countByTopic[countByTopic.length-1].count,
+				'maxValue': countByTopic[0].count,
+				'minValue_label': countByTopic[countByTopic.length-1].name,
+				'maxValue_label': countByTopic[0].name,
+			}
+		}
+		let topicBreakdown = {
+				'all': {'countByTopicObj':{}}
+		}
+		for(let i=1; i< 6; i++){
+			let uniqueTopics = [ ...new Set(this.state.bill_topics_column.map( billTopic => billTopic[i])) ].sort();
+			let countByTopic = uniqueTopics.forEach( topicName => {
+				let count = this.state.bill_topics_column.filter(billTopic => billTopic[i] == topicName).length
+				if( !topicBreakdown['all']['countByTopicObj'][topicName] )
+					topicBreakdown['all']['countByTopicObj'][topicName] = 0;
+				topicBreakdown['all']['countByTopicObj'][topicName] += count;
+				if( !topicBreakdown[i] )
+					topicBreakdown[i] = {'countByUniqueArr':[]};
+				topicBreakdown[i]['countByUniqueArr'].push({'name': topicName, 'count': count});
+			});
+
+			topicBreakdown[i] = getTopicMetrics(topicBreakdown[i]['countByUniqueArr'])
+		}
+
+		let uniqueTopicsAll = Object.keys(topicBreakdown['all']['countByTopicObj'])
+		let countByUniqueArr = uniqueTopicsAll.map( topicName => {
+			return {'name': topicName, 'count': topicBreakdown['all']['countByTopicObj'][topicName]}
+		})
+		topicBreakdown['all'] = getTopicMetrics(countByUniqueArr)
+
+		return {topicBreakdown:topicBreakdown}
+	}
+	buildDateStatistics = () => {
+		let uniqueDates = [ ...new Set(this.state.bill_topics_column.map( billTopic => billTopic['date'])) ].sort(this.sortNumber);
+		let minDate = new Date(Math.min.apply(null, uniqueDates));
+		let maxDate = new Date(Math.max.apply(null, uniqueDates));
+		return {
+			'date': {
+				'uniqueValues': uniqueDates,
+				'minValue': minDate,
+				'maxValue': maxDate,
+				'minValue_label': this.formatDate(minDate),
+				'maxValue_label': this.formatDate(maxDate),
+			}
+		}
+	}
+	buildChartStatistics = () => {
+			this.setState({
+				...this.buildYearMonthStatistics(),
+				...this.buildYearStatistics(),
+				...this.buildMonthStatistics(),
+				...this.buildWeekdayStatistics(),
+				...this.buildDateStatistics(),
+				...this.buildTopicStatistics(),
+				loading: false
+			})
+	}
 	formatDate = (date) => {
 		return date.toLocaleString('en-us', {year: 'numeric', day:'2-digit', month: 'long'})
 	}
@@ -72,110 +243,18 @@ class Overview extends React.Component {
 		this.setState({'selectedTopicLevel': event.target.value})
 	}
 	render(){
-		let { bill_topics_column } = this.state
+		if ( !this.state.loading ){
 
-		if ( bill_topics_column && bill_topics_column.length > 0 ){
-			let monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
-			let weekdayLabels = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+			let yearData = this.buildChartTemplate('Activity by Year',this.state.year.uniqueValues, this.state.year.countByUnique)
+			let yearFormattedData = this.buildChartTemplate('Activity by Year', this.state.formattedYear.uniqueValues, this.state.formattedYear.countByUnique)
 
-			let sortMonths = (a,b) => {
-				return monthLabels.indexOf(a) - monthLabels.indexOf(b)
-			}
-			let sortWeekdays = (a,b) => {
-				return weekdayLabels.indexOf(a) - weekdayLabels.indexOf(b)
-			}
+			let monthData = this.buildChartTemplate('Activity by Month',  this.state.month.uniqueValues.map(monthInt => monthLabels[monthInt-1]), this.state.month.countByUnique)
+			let monthFormattedData = this.buildChartTemplate('Activity by Month', this.state.formattedMonth.uniqueValues, this.state.formattedMonth.countByUnique)
 
-			let uniqueYearMonth = [ ...new Set(bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort();
-
-
-			let uniqueYear = [ ...new Set(bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) )) ].sort(this.sortNumber);
-			let countByYear = uniqueYear.map( year => bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) == year).length );
-			let minCountByYear = Math.min.apply(null, countByYear);
-    	let maxCountByYear = Math.max.apply(null, countByYear);
-			let minCountByYear_label = uniqueYear[countByYear.indexOf(minCountByYear)]
-			let maxCountByYear_label = uniqueYear[countByYear.indexOf(maxCountByYear)]
-
-			let uniqueYearFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateYear(billTopic['dateObj']) )) ].sort(this.sortNumber);
-			let countByYearFormatted = uniqueYearFormatted.map( year => bill_topics_column.filter(billTopic => this.formatDateYear(billTopic['dateObj']) == year).length );
-			let minCountByYearFormatted = Math.min.apply(null, countByYearFormatted);
-    	let maxCountByYearFormatted = Math.max.apply(null, countByYearFormatted);
-			let minCountByYearFormatted_label = uniqueYearFormatted[countByYearFormatted.indexOf(minCountByYearFormatted)]
-			let maxCountByYearFormatted_label = uniqueYearFormatted[countByYearFormatted.indexOf(maxCountByYearFormatted)]
-
-			let uniqueMonth = [ ...new Set(bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4))) ) ].sort(this.sortNumber);
-			let countByMonth = uniqueMonth.map( month => bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4)) == month).length );
-			let minCountByMonth = Math.min.apply(null, countByMonth);
-    	let maxCountByMonth = Math.max.apply(null, countByMonth);
-			let minCountByMonth_label = monthLabels[countByMonth.indexOf(minCountByMonth)]
-			let maxCountByMonth_label = monthLabels[countByMonth.indexOf(maxCountByMonth)]
-
-			let uniqueMonthFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateMonth(billTopic['dateObj']) )) ].sort(sortMonths);
-			let countByMonthFormatted = uniqueMonthFormatted.map( month => bill_topics_column.filter(billTopic => this.formatDateMonth(billTopic['dateObj']) == month).length );
-			let minCountByMonthFormatted = Math.min.apply(null, countByMonthFormatted);
-    	let maxCountByMonthFormatted = Math.max.apply(null, countByMonthFormatted);
-			let minCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(minCountByMonthFormatted)]
-			let maxCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(maxCountByMonthFormatted)]
-
-			let uniqueWeekdayFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateWeekday(billTopic['dateObj']) )) ].sort(this.sortNumber).sort(sortWeekdays);
-			let countByWeekdayFormatted = uniqueWeekdayFormatted.map( weekday => bill_topics_column.filter(billTopic => this.formatDateWeekday(billTopic['dateObj']) == weekday).length );
-			let minCountByWeekdayFormatted = Math.min.apply(null, countByWeekdayFormatted);
-    	let maxCountByWeekdayFormatted = Math.max.apply(null, countByWeekdayFormatted);
-			let minCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(minCountByWeekdayFormatted)]
-			let maxCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(maxCountByWeekdayFormatted)]
-
-			// largest number first
-			let sortTopics = (a,b) => {
-				return b.count - a.count
-			}
-			let getTopicMetrics = (countByTopicArr) => {
-				countByTopic = countByTopicArr.sort(sortTopics)
-				return {
-					'countByTopicArr' : countByTopic,
-					'minCountByTopic' : countByTopic[countByTopic.length-1].count,
-					'maxCountByTopic' : countByTopic[0].count,
-					'minCountByTopic_label' : countByTopic[countByTopic.length-1].name,
-					'maxCountByTopic_label' : countByTopic[0].name,
-				}
-			}
-			let topicBreakdown = {
-					'all': {'countByTopicObj':{}}
-			}
-			for(let i=1; i< 6; i++){
-				let uniqueTopics = [ ...new Set(bill_topics_column.map( billTopic => billTopic[i])) ].sort();
-				let countByTopic = uniqueTopics.forEach( topicName => {
-					let count = bill_topics_column.filter(billTopic => billTopic[i] == topicName).length
-					if( !topicBreakdown['all']['countByTopicObj'][topicName] )
-						topicBreakdown['all']['countByTopicObj'][topicName] = 0;
-					topicBreakdown['all']['countByTopicObj'][topicName] += count;
-					if( !topicBreakdown[i] )
-						topicBreakdown[i] = {'countByTopicArr':[]};
-					topicBreakdown[i]['countByTopicArr'].push({'name': topicName, 'count': count});
-				});
-
-				topicBreakdown[i] = getTopicMetrics(topicBreakdown[i]['countByTopicArr'])
-			}
-
-			let uniqueTopics = Object.keys(topicBreakdown['all']['countByTopicObj'])
-			let countByTopicAll = uniqueTopics.map( topicName => {
-				return {'name': topicName, 'count': topicBreakdown['all']['countByTopicObj'][topicName]}
-			})
-			topicBreakdown['all'] = getTopicMetrics(countByTopicAll)
-
-
-			let uniqueDates = [ ...new Set(bill_topics_column.map( billTopic => billTopic['date'])) ].sort(this.sortNumber);
-			let minDate = new Date(Math.min.apply(null, uniqueDates));
-    	let maxDate = new Date(Math.max.apply(null, uniqueDates));
-
-			let yearData = this.buildChartTemplate('Activity by Year',uniqueYear, countByYear)
-			let yearFormattedData = this.buildChartTemplate('Activity by Year', uniqueYearFormatted, countByYearFormatted)
-
-			let monthData = this.buildChartTemplate('Activity by Month', uniqueMonth.map(monthInt => monthLabels[monthInt-1]), countByMonth)
-			let monthFormattedData = this.buildChartTemplate('Activity by Month', uniqueMonthFormatted, countByMonthFormatted)
-
-			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', uniqueWeekdayFormatted, countByWeekdayFormatted)
+			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', this.state.weekday.uniqueValues, this.state.weekday.countByUnique)
 
 			let topicCategory = this.state.selectedTopicLevel
-			let countByTopic = topicBreakdown[topicCategory]['countByTopicArr']
+			let countByTopic = this.state.topicBreakdown[topicCategory]['countByUniqueArr']
 			let countByTopic_labels = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
 			let countByTopic_values = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
 			let topicData = this.buildChartTemplate('Activity by Topic', countByTopic_labels, countByTopic_values)
@@ -203,13 +282,13 @@ class Overview extends React.Component {
 									<Grid container spacing={16}>
 										<Grid item xs={12}>
 											<Typography variant="h6" noWrap>
-												This collection of bills contains a total of <b>{bill_topics_column.length} records</b>.
+												This collection of bills contains a total of <b>{this.state.bill_topics_column.length} records</b>.
 											</Typography>
 											<Typography variant="h6" noWrap>
-												Records tagged with a totals of <b>{uniqueTopics.length} distinct topics</b>.
+												Records tagged with a totals of <b>{countByTopic.length} distinct topics</b>.
 											</Typography>
 											<Typography variant="h6" noWrap>
-												Data spans from <b>{ this.formatDate(minDate) } to { this.formatDate(maxDate) }</b>, covering <b>{uniqueDates.length} unique dates</b> over <b>{countByYear.length} different years</b>.
+												Data spans from <b>{ this.state.date.minValue_label } to { this.state.date.maxValue_label }</b>, covering <b>{this.state.date.uniqueValues.length} unique dates</b> over <b>{this.state.year.countByUnique.length} different years</b>.
 											</Typography>
 										</Grid>
 									</Grid>
@@ -226,7 +305,7 @@ class Overview extends React.Component {
 									<Grid container spacing={16}>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by year we can see that <b>{minCountByYear_label} has the least activity</b> of {minCountByYear} records and <b>{maxCountByYear_label} has the most activity</b> of {minCountByYear} records.
+												Looking over the records by year we can see that <b>{this.state.year.minValue_label} has the least activity</b> of {this.state.year.minValue} records and <b>{this.state.year.maxValue_label} has the most activity</b> of {this.state.year.maxValue} records.
 											</Typography>
 										</Grid>
 										<Grid item xs={8}>
@@ -255,13 +334,13 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by month we can see that <b>{minCountByMonth_label} has the least activity</b> of {minCountByMonth} records and <b>{maxCountByMonth_label} has the most activity</b> of {maxCountByMonth} records.
+												Looking over the records by month we can see that <b>{this.state.month.minValue_label} has the least activity</b> of {this.state.month.minValue} records and <b>{this.state.month.maxValue_label} has the most activity</b> of {this.state.month.maxValue} records.
 											</Typography>
 											<Typography variant="h5">
 												Comparing this to another date column we find conflicting information!
 											</Typography>
 											<Typography variant="h6">
-												Here we find that <b>{minCountByMonthFormatted_label} has the least activity</b> of {minCountByMonthFormatted} records and <b>{maxCountByMonthFormatted_label} has the most activity</b> of {maxCountByMonthFormatted} records!
+												Here we find that <b>{this.state.formattedMonth.minValue_label} has the least activity</b> of {this.state.formattedMonth.minValue} records and <b>{this.state.formattedMonth.maxValue_label} has the most activity</b> of {this.state.formattedMonth.maxValue_label} records!
 											</Typography>
 
 										</Grid>
@@ -282,7 +361,7 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by weekday we can see that <b>{minCountByWeekdayFormatted_label} has the least total activity</b> of {minCountByWeekdayFormatted} records and <b>{maxCountByWeekdayFormatted_label} has the most total activity</b> of {maxCountByWeekdayFormatted} records.
+												Looking over the records by weekday we can see that <b>{this.state.weekday.minValue_label} has the least total activity</b> of {this.state.weekday.minValue} records and <b>{this.state.weekday.maxValue_label} has the most total activity</b> of {this.state.weekday.maxValue} records.
 											</Typography>
 										</Grid>
 									</Grid>
@@ -321,7 +400,7 @@ class Overview extends React.Component {
 												as our topic level of interest.
 											</Typography>
 											<Typography variant="h6">
-												Looking over the records by topic we can see that <b>{topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {topicBreakdown[topicCategory]['maxCountByTopic']} records.
+												Looking over the records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {this.state.topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{this.state.topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {this.state.topicBreakdown[topicCategory]['maxCountByTopic']} records.
 											</Typography>
 										</Grid>
 									</Grid>
