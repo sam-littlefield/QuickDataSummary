@@ -47,18 +47,30 @@ class Overview extends React.Component {
 			]
 		};
 	}
+	sortNumber = (a, b) => {
+		return a - b;
+	}
 	render(){
 		let { bill_topics_column } = this.state
 
 		if ( bill_topics_column ){
+			let monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 			let unique_YearMonth = [ ...new Set(bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort();
 
-			let unique_Year = [ ...new Set(bill_topics_column.map( billTopic => (billTopic['YearMonth']+'').substring(0, 4))) ].sort();
-			let countByYear = unique_Year.map( year => bill_topics_column.filter(billTopic => (billTopic['YearMonth']+'').substring(0, 4) == year).length );
+			let uniqueYear = [ ...new Set(bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) )) ].sort(this.sortNumber);
+			let countByYear = uniqueYear.map( year => bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) == year).length );
+			let minCountByYear = Math.min.apply(null, countByYear);
+    	let maxCountByYear = Math.max.apply(null, countByYear);
+			let minCountByYear_label = uniqueYear[countByYear.indexOf(minCountByYear)]
+			let maxCountByYear_label = uniqueYear[countByYear.indexOf(maxCountByYear)]
 
-			let unique_Month = [ ...new Set(bill_topics_column.map( billTopic => (billTopic['YearMonth']+'').substring(4))) ].sort();
-			let countByMonth = unique_Month.map( year => bill_topics_column.filter(billTopic => (billTopic['YearMonth']+'').substring(4) == year).length );
+			let uniqueMonth = [ ...new Set(bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4))) ) ].sort(this.sortNumber);
+			let countByMonth = uniqueMonth.map( month => bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4)) == month).length );
+			let minCountByMonth = Math.min.apply(null, countByMonth);
+    	let maxCountByMonth = Math.max.apply(null, countByMonth);
+			let minCountByMonth_label = monthLabels[countByMonth.indexOf(minCountByMonth)]
+			let maxCountByMonth_label = monthLabels[countByMonth.indexOf(maxCountByMonth)]
 
 
 			let unique_1 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['1'])) ];
@@ -69,8 +81,8 @@ class Overview extends React.Component {
 
 			let unique_dates = [ ...new Set(bill_topics_column.map( billTopic => billTopic['date'])) ];
 
-			let year_data = this.buildChartTemplate('Activity by Year',unique_Year, countByYear)
-			let month_data = this.buildChartTemplate('Activity by Month',unique_Month, countByMonth)
+			let yearData = this.buildChartTemplate('Activity by Year',uniqueYear, countByYear)
+			let monthData = this.buildChartTemplate('Activity by Month', uniqueMonth.map(monthInt => monthLabels[monthInt-1]), countByMonth)
 
 			let options = {
 				legend:{
@@ -101,10 +113,10 @@ class Overview extends React.Component {
 							</Typography>
 						</Grid>
 						<Grid item xs={6}>
-							<Bar data={year_data} options={options}/>
+							<Bar data={yearData} options={options}/>
 						</Grid>
 						<Grid item xs={6}>
-							<Bar data={month_data} options={options}/>
+							<Bar data={monthData} options={options}/>
 						</Grid>
 
 					</Grid>
