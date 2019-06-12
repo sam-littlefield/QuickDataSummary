@@ -53,7 +53,7 @@ class Overview extends React.Component {
 	render(){
 		let { bill_topics_column } = this.state
 
-		if ( bill_topics_column ){
+		if ( bill_topics_column && bill_topics_column.length > 0 ){
 			let monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 			let unique_YearMonth = [ ...new Set(bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort();
@@ -123,6 +123,7 @@ class Overview extends React.Component {
 				</div>
 			)
 		}
+		return null
 	}
 }
 export default withRouter(Overview)
