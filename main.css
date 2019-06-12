@@ -1,7 +1,10 @@
 html {
     background-color: lightcoral;
 }
-.inlineTextSelectButton {
+div.inlineTextSelectButton {
   padding-left: 10px;
   padding-right: 10px;
+}
+div.warning-message {
+  text-align: center;
 }

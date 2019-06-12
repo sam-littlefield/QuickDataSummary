@@ -1,10 +1,11 @@
 import React from 'react'
 import { Link, withRouter } from 'react-router-dom'
-import { idFriendly } from '../helpers'
+import { idFriendly, deepClone } from '../helpers'
 import routes from '../router/routes'
-import { Card, CardHeader, CardContent, Grid, Typography, Select, OutlinedInput, MenuItem, FormControl, FormHelperText} from '@material-ui/core'
-import {Bar} from 'react-chartjs-2';
-
+import Loading from '../components/loading'
+import { Card, CardHeader, CardContent, Grid, Typography, Select, OutlinedInput, MenuItem, FormControl, FormHelperText, Icon, Button} from '@material-ui/core'
+import { Bar } from 'react-chartjs-2';
+import { Warning } from '@material-ui/icons';
 
 
 const monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -18,6 +19,7 @@ class Overview extends React.Component {
 				bill_topics_column: [],
 				selectedTopicLevel: 'all',
 				loading: true,
+				combineMonthCharts: false,
 		}
 		this.getData()
 	}
@@ -31,15 +33,16 @@ class Overview extends React.Component {
 			.then(res => res.json())
 			.then(data => this.setState({bill_topics_column:data.map(this.prepareBillTopicsItem)},this.buildChartStatistics) )
 	}
-	buildChartTemplate = (title, labels, data) => {
+	buildChartTemplate = (title, labels, data, type, color) => {
 		return {
 			labels: labels,
 		  datasets: [
 		    {
 		      label: title,
+					type: type,
 		      fill: false,
 		      lineTension: 0.1,
-		      backgroundColor: 'rgba(75,192,192,0.4)',
+		      backgroundColor: color?color:'rgba(75,192,192,0.4)',
 		      borderColor: 'rgba(75,192,192,1)',
 		      borderCapStyle: 'butt',
 		      borderDash: [],
@@ -245,19 +248,22 @@ class Overview extends React.Component {
 	render(){
 		if ( !this.state.loading ){
 
-			let yearData = this.buildChartTemplate('Activity by Year',this.state.year.uniqueValues, this.state.year.countByUnique)
-			let yearFormattedData = this.buildChartTemplate('Activity by Year', this.state.formattedYear.uniqueValues, this.state.formattedYear.countByUnique)
+			let yearData = this.buildChartTemplate('Bills by Year',this.state.year.uniqueValues, this.state.year.countByUnique,'bar')
+			let yearFormattedData = this.buildChartTemplate('Bills by Year', this.state.formattedYear.uniqueValues, this.state.formattedYear.countByUnique,'bar')
 
-			let monthData = this.buildChartTemplate('Activity by Month',  this.state.month.uniqueValues.map(monthInt => monthLabels[monthInt-1]), this.state.month.countByUnique)
-			let monthFormattedData = this.buildChartTemplate('Activity by Month', this.state.formattedMonth.uniqueValues, this.state.formattedMonth.countByUnique)
+			let monthData = this.buildChartTemplate('Bills by Year/Month',  this.state.month.uniqueValues.map(monthInt => monthLabels[monthInt-1]), this.state.month.countByUnique,'bar','rgba(255,99,132,0.4)')
+			let monthFormattedData = this.buildChartTemplate('Bills by Date Month', this.state.formattedMonth.uniqueValues, this.state.formattedMonth.countByUnique,'bar')
 
-			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', this.state.weekday.uniqueValues, this.state.weekday.countByUnique)
+			let combinedMonthData = deepClone(monthData)
+			combinedMonthData['datasets'].push(monthFormattedData['datasets'][0])
+
+			let weekdayFormattedData = this.buildChartTemplate('Bills by Weekday', this.state.weekday.uniqueValues, this.state.weekday.countByUnique,'bar')
 
 			let topicCategory = this.state.selectedTopicLevel
 			let countByTopic = this.state.topicBreakdown[topicCategory]['countByUniqueArr']
 			let countByTopic_labels = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
 			let countByTopic_values = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
-			let topicData = this.buildChartTemplate('Activity by Topic', countByTopic_labels, countByTopic_values)
+			let topicData = this.buildChartTemplate('Bills by Topic', countByTopic_labels, countByTopic_values)
 
 			let options = {
 				legend:{
@@ -270,16 +276,15 @@ class Overview extends React.Component {
 								direction="column"
 								justify="center"
 								alignItems="center">
-
-
-
 						<Grid item xs={8}>
 							<Card>
 								<CardHeader
 									title="General statistics"
 								/>
 								<CardContent>
-									<Grid container spacing={16}>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={12}>
 											<Typography variant="h6" noWrap>
 												This collection of bills contains a total of <b>{this.state.bill_topics_column.length} records</b>.
@@ -302,14 +307,13 @@ class Overview extends React.Component {
 									title="Exploring data by years"
 								/>
 								<CardContent>
-									<Grid container spacing={16}>
-										<Grid item xs={4}>
-											<Typography variant="h6">
-												Looking over the records by year we can see that <b>{this.state.year.minValue_label} has the least activity</b> of {this.state.year.minValue} records and <b>{this.state.year.maxValue_label} has the most activity</b> of {this.state.year.maxValue} records.
-											</Typography>
-										</Grid>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={8}>
-											<Bar data={yearData} options={options}/>
+											<Typography variant="h6">
+												Looking over the records by year we can see that <b>{this.state.formattedYear.minValue_label} has the least activity</b> with {this.state.formattedYear.minValue} records and <b>{this.state.formattedYear.maxValue_label} has the most activity</b> with {this.state.formattedYear.maxValue} records.
+											</Typography>
 										</Grid>
 										<Grid item xs={8}>
 											<Bar data={yearFormattedData} options={options}/>
@@ -325,26 +329,41 @@ class Overview extends React.Component {
 									title="Exploring data by months"
 								/>
 								<CardContent>
-									<Grid container spacing={16}>
-										<Grid item xs={8}>
-											<Bar data={monthData} options={options}/>
-										</Grid>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={8}>
 											<Bar data={monthFormattedData} options={options}/>
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by month we can see that <b>{this.state.month.minValue_label} has the least activity</b> of {this.state.month.minValue} records and <b>{this.state.month.maxValue_label} has the most activity</b> of {this.state.month.maxValue} records.
+												Here we find that <b>{this.state.formattedMonth.minValue_label} has the least activity</b> of {this.state.formattedMonth.minValue} records and <b>{this.state.formattedMonth.maxValue_label} has the most activity</b> of {this.state.formattedMonth.maxValue} records!
 											</Typography>
-											<Typography variant="h5">
-												Comparing this to another date column we find conflicting information!
-											</Typography>
-											<Typography variant="h6">
-												Here we find that <b>{this.state.formattedMonth.minValue_label} has the least activity</b> of {this.state.formattedMonth.minValue} records and <b>{this.state.formattedMonth.maxValue_label} has the most activity</b> of {this.state.formattedMonth.maxValue_label} records!
-											</Typography>
+										</Grid>
 
+										<Grid item xs={2}></Grid>
+										<Grid item xs={8} className='warning-message'>
+											<Typography variant="h5">
+												<Warning color="error"/>Comparing month information in two columns we find <b>conflicting information</b> is present in the data!<Warning color='error'/>
+											</Typography>
+										</Grid>
+										<Grid item xs={2}></Grid>
+
+										<Grid item xs={8}>
+											<Bar data={this.state.combineMonthCharts?combinedMonthData: monthData} options={options}/>
+										</Grid>
+										<Grid item xs={4}>
+											<Typography variant="h6">
+												Breaking down the data further, by month, we can see that <b>{this.state.month.minValue_label} has the least activity</b> with {this.state.month.minValue} records and <b>{this.state.month.maxValue_label} has the most activity</b> with {this.state.month.maxValue} records.
+											</Typography>
+											<Button
+												variant="contained"
+												onClick={(e)=>this.setState({combineMonthCharts:!this.state.combineMonthCharts}) }>
+												{ this.state.combineMonthCharts? 'Hide comparison':'Show comparison' }
+											</Button>
 										</Grid>
 									</Grid>
+
 								</CardContent>
 							</Card>
 						</Grid>
@@ -355,14 +374,16 @@ class Overview extends React.Component {
 									title="Exploring data by weekday"
 								/>
 								<CardContent>
-									<Grid container spacing={16}>
-										<Grid item xs={8}>
-											<Bar data={weekdayFormattedData} options={options}/>
-										</Grid>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by weekday we can see that <b>{this.state.weekday.minValue_label} has the least total activity</b> of {this.state.weekday.minValue} records and <b>{this.state.weekday.maxValue_label} has the most total activity</b> of {this.state.weekday.maxValue} records.
+												Moving onto the data broken down by weekday we can see that <b>{this.state.weekday.minValue_label} has the least total activity</b> at {this.state.weekday.minValue} records and <b>{this.state.weekday.maxValue_label} has the most total activity</b> at {this.state.weekday.maxValue} records.
 											</Typography>
+										</Grid>
+										<Grid item xs={8}>
+											<Bar data={weekdayFormattedData} options={options}/>
 										</Grid>
 									</Grid>
 								</CardContent>
@@ -372,16 +393,18 @@ class Overview extends React.Component {
 						<Grid item xs={8}>
 							<Card>
 								<CardHeader
-									title="Exploring data by topic (Top 5)"
+									title={`Exploring data by topic (Top 5) by assignment`}
 								/>
 								<CardContent>
-									<Grid container spacing={16}>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={8}>
 											<Bar data={topicData} options={options}/>
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												We are currently
+												We are currently viewing topics by
 												<FormControl required className='inlineTextSelectButton'>
 													<Select
 													 value={this.state.selectedTopicLevel}
@@ -397,10 +420,10 @@ class Overview extends React.Component {
 													</Select>
 													<FormHelperText>Try adjusting</FormHelperText>
 												</FormControl>
-												as our topic level of interest.
+												assignment.
 											</Typography>
 											<Typography variant="h6">
-												Looking over the records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {this.state.topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{this.state.topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {this.state.topicBreakdown[topicCategory]['maxCountByTopic']} records.
+												Looking over the records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minValue_label']} has the least total activity</b> of {this.state.topicBreakdown[topicCategory]['minValue']} records and <b>{this.state.topicBreakdown[topicCategory]['maxValue_label']} has the most total activity</b> of {this.state.topicBreakdown[topicCategory]['maxValue']} records for {topicCategory} topics.
 											</Typography>
 										</Grid>
 									</Grid>
@@ -412,7 +435,25 @@ class Overview extends React.Component {
 				</div>
 			)
 		}
-		return null
+		return (
+			<Grid container spacing={16}
+						direction="column"
+						justify="center"
+						alignItems="center">
+				<Grid item xs={8} className='warning-message'>
+					<Card>
+						<CardHeader
+							title="Please wait..."
+						/>
+
+						<CardContent>
+							<Loading/>
+							{this.state.bill_topics_column.length > 0 ? `Processing ${this.state.bill_topics_column.length} Records`: null }
+						</CardContent>
+					</Card>
+				</Grid>
+			</Grid>
+		)
 	}
 }
 export default withRouter(Overview)
