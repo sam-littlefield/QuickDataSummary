@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, withRouter } from 'react-router-dom'
 import { idFriendly } from '../helpers'
 import routes from '../router/routes'
-import { Card, CardHeader, CardContent, Grid, Typography} from '@material-ui/core'
+import { Card, CardHeader, CardContent, Grid, Typography, Select, OutlinedInput, MenuItem, FormControl, FormHelperText} from '@material-ui/core'
 import {Bar} from 'react-chartjs-2';
 
 class Overview extends React.Component {
@@ -11,6 +11,7 @@ class Overview extends React.Component {
 
 		this.state = {
 				bill_topics_column: [],
+				selectedTopicLevel: 'all',
 		}
 		this.getData()
 	}
@@ -66,6 +67,9 @@ class Overview extends React.Component {
 	}
 	sortNumber = (a, b) => {
 	  return a - b;
+	}
+	selectTopicLevel = (event) => {
+		this.setState({'selectedTopicLevel': event.target.value})
 	}
 	render(){
 		let { bill_topics_column } = this.state
@@ -170,7 +174,7 @@ class Overview extends React.Component {
 
 			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', uniqueWeekdayFormatted, countByWeekdayFormatted)
 
-			let topicCategory = 'all'
+			let topicCategory = this.state.selectedTopicLevel
 			let countByTopic = topicBreakdown[topicCategory]['countByTopicArr']
 			let countByTopic_labels = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
 			let countByTopic_values = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
@@ -298,7 +302,26 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by weekday we can see that <b>{topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {topicBreakdown[topicCategory]['maxCountByTopic']} records.
+												We are currently
+												<FormControl required className='inlineTextSelectButton'>
+													<Select
+													 value={this.state.selectedTopicLevel}
+													 onChange={this.selectTopicLevel}
+													 input={<OutlinedInput labelWidth={10} name="Topic level" id="outlined-age-simple" />}
+													>
+													 <MenuItem value={'all'}>All</MenuItem>
+													 <MenuItem value={'1'}>First</MenuItem>
+													 <MenuItem value={'2'}>Second</MenuItem>
+													 <MenuItem value={'3'}>Third</MenuItem>
+													 <MenuItem value={'4'}>Fourth</MenuItem>
+													 <MenuItem value={'5'}>Fifth</MenuItem>
+													</Select>
+													<FormHelperText>Try adjusting</FormHelperText>
+												</FormControl>
+												as our topic level of interest.
+											</Typography>
+											<Typography variant="h6">
+												Looking over the records by topic we can see that <b>{topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {topicBreakdown[topicCategory]['maxCountByTopic']} records.
 											</Typography>
 										</Grid>
 									</Grid>
