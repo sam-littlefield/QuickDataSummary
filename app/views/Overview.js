@@ -119,44 +119,44 @@ class Overview extends React.Component {
 			let minCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(minCountByWeekdayFormatted)]
 			let maxCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(maxCountByWeekdayFormatted)]
 
-
-			let topicBreakdown = {
-					'all': {}
-			}
-			for(let i=1; i< 6; i++){
-				let uniqueTopics = [ ...new Set(bill_topics_column.map( billTopic => billTopic[i])) ].sort();
-				let countByTopic = uniqueTopics.map( topicName => {
-					let count = bill_topics_column.filter(billTopic => billTopic[i] == topicName).length
-					if( !topicBreakdown['all'][topicName] )
-						topicBreakdown['all'][topicName] = 0;
-					topicBreakdown['all'][topicName] += count;
-					return count
-				});
-				let minCountByTopic = Math.min.apply(null, countByTopic);
-				let maxCountByTopic = Math.max.apply(null, countByTopic);
-				let minCountByTopic_label = uniqueTopics[countByTopic.indexOf(minCountByTopic)]
-				let maxCountByTopic_label = uniqueTopics[countByTopic.indexOf(maxCountByTopic)]
-				topicBreakdown[i] = {
-					uniqueTopics: uniqueTopics,
-					countByTopic: countByTopic,
-					minCountByTopic: minCountByTopic,
-					maxCountByTopic: maxCountByTopic,
-					minCountByTopic_label: minCountByTopic_label,
-					maxCountByTopic_label: maxCountByTopic_label
-				}
-			}
 			// largest number first
 			let sortTopics = (a,b) => {
 				return b.count - a.count
 			}
-			let uniqueTopics = Object.keys(topicBreakdown['all']).sort();
-			let countByTopic = uniqueTopics.map( topicName => {
-				return {'name': topicName, 'count': topicBreakdown['all'][topicName]}
-			}).sort(sortTopics);
-			let minCountByTopic = countByTopic[countByTopic.length-1].count
-			let maxCountByTopic = countByTopic[0].count
-			let minCountByTopic_label = countByTopic[countByTopic.length-1].name
-			let maxCountByTopic_label = countByTopic[0].name
+			let getTopicMetrics = (countByTopicArr) => {
+				countByTopic = countByTopicArr.sort(sortTopics)
+				return {
+					'countByTopicArr' : countByTopic,
+					'minCountByTopic' : countByTopic[countByTopic.length-1].count,
+					'maxCountByTopic' : countByTopic[0].count,
+					'minCountByTopic_label' : countByTopic[countByTopic.length-1].name,
+					'maxCountByTopic_label' : countByTopic[0].name,
+				}
+			}
+			let topicBreakdown = {
+					'all': {'countByTopicObj':{}}
+			}
+			for(let i=1; i< 6; i++){
+				let uniqueTopics = [ ...new Set(bill_topics_column.map( billTopic => billTopic[i])) ].sort();
+				let countByTopic = uniqueTopics.forEach( topicName => {
+					let count = bill_topics_column.filter(billTopic => billTopic[i] == topicName).length
+					if( !topicBreakdown['all']['countByTopicObj'][topicName] )
+						topicBreakdown['all']['countByTopicObj'][topicName] = 0;
+					topicBreakdown['all']['countByTopicObj'][topicName] += count;
+					if( !topicBreakdown[i] )
+						topicBreakdown[i] = {'countByTopicArr':[]};
+					topicBreakdown[i]['countByTopicArr'].push({'name': topicName, 'count': count});
+				});
+
+				topicBreakdown[i] = getTopicMetrics(topicBreakdown[i]['countByTopicArr'])
+			}
+
+			let uniqueTopics = Object.keys(topicBreakdown['all']['countByTopicObj'])
+			let countByTopicAll = uniqueTopics.map( topicName => {
+				return {'name': topicName, 'count': topicBreakdown['all']['countByTopicObj'][topicName]}
+			})
+			topicBreakdown['all'] = getTopicMetrics(countByTopicAll)
+
 
 			let uniqueDates = [ ...new Set(bill_topics_column.map( billTopic => billTopic['date'])) ].sort(this.sortNumber);
 			let minDate = new Date(Math.min.apply(null, uniqueDates));
@@ -170,9 +170,11 @@ class Overview extends React.Component {
 
 			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', uniqueWeekdayFormatted, countByWeekdayFormatted)
 
-			let labely = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
-			let valuess = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
-			let topicData = this.buildChartTemplate('Activity by Topic', labely ,  valuess)
+			let topicCategory = 'all'
+			let countByTopic = topicBreakdown[topicCategory]['countByTopicArr']
+			let countByTopic_labels = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
+			let countByTopic_values = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
+			let topicData = this.buildChartTemplate('Activity by Topic', countByTopic_labels, countByTopic_values)
 
 			let options = {
 				legend:{
@@ -296,7 +298,7 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Looking over the records by weekday we can see that <b>{minCountByTopic_label} has the least total activity</b> of {minCountByTopic} records and <b>{maxCountByTopic_label} has the most total activity</b> of {maxCountByTopic} records.
+												Looking over the records by weekday we can see that <b>{topicBreakdown[topicCategory]['minCountByTopic_label']} has the least total activity</b> of {topicBreakdown[topicCategory]['minCountByTopic']} records and <b>{topicBreakdown[topicCategory]['maxCountByTopic_label']} has the most total activity</b> of {topicBreakdown[topicCategory]['maxCountByTopic']} records.
 											</Typography>
 										</Grid>
 									</Grid>
