@@ -14,10 +14,15 @@ class Overview extends React.Component {
 		}
 		this.getData()
 	}
+	prepareBillTopicsItem = (billTopicItem) => {
+		/* Converting date attribute into a date object*/
+		billTopicItem['dateObj'] = new Date(billTopicItem['date'])
+		return billTopicItem;
+	}
 	getData = () => {
 		fetch("./data/bill_topics_list.json")
 			.then(res => res.json())
-			.then(data => this.setState({bill_topics_column:data}))
+			.then(data => this.setState({bill_topics_column:data.map(this.prepareBillTopicsItem)}))
 	}
 	buildChartTemplate = (title, labels, data) => {
 		return {
@@ -76,7 +81,7 @@ class Overview extends React.Component {
 				return weekdayLabels.indexOf(a) - weekdayLabels.indexOf(b)
 			}
 
-			let uniqueYearMonth = [ ...new Set(bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort(sortNumber);
+			let uniqueYearMonth = [ ...new Set(bill_topics_column.map( billTopic => billTopic['YearMonth'])) ].sort();
 
 
 			let uniqueYear = [ ...new Set(bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(0, 4)) )) ].sort(this.sortNumber);
@@ -86,8 +91,8 @@ class Overview extends React.Component {
 			let minCountByYear_label = uniqueYear[countByYear.indexOf(minCountByYear)]
 			let maxCountByYear_label = uniqueYear[countByYear.indexOf(maxCountByYear)]
 
-			let uniqueYearFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateYear(new Date(billTopic['date'])) )) ].sort(this.sortNumber);
-			let countByYearFormatted = uniqueYearFormatted.map( year => bill_topics_column.filter(billTopic => this.formatDateYear(new Date(billTopic['date'])) == year).length );
+			let uniqueYearFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateYear(billTopic['dateObj']) )) ].sort(this.sortNumber);
+			let countByYearFormatted = uniqueYearFormatted.map( year => bill_topics_column.filter(billTopic => this.formatDateYear(billTopic['dateObj']) == year).length );
 			let minCountByYearFormatted = Math.min.apply(null, countByYearFormatted);
     	let maxCountByYearFormatted = Math.max.apply(null, countByYearFormatted);
 			let minCountByYearFormatted_label = uniqueYearFormatted[countByYearFormatted.indexOf(minCountByYearFormatted)]
@@ -100,15 +105,15 @@ class Overview extends React.Component {
 			let minCountByMonth_label = monthLabels[countByMonth.indexOf(minCountByMonth)]
 			let maxCountByMonth_label = monthLabels[countByMonth.indexOf(maxCountByMonth)]
 
-			let uniqueMonthFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateMonth(new Date(billTopic['date'])) )) ].sort(sortMonths);
-			let countByMonthFormatted = uniqueMonthFormatted.map( month => bill_topics_column.filter(billTopic => this.formatDateMonth(new Date(billTopic['date'])) == month).length );
+			let uniqueMonthFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateMonth(billTopic['dateObj']) )) ].sort(sortMonths);
+			let countByMonthFormatted = uniqueMonthFormatted.map( month => bill_topics_column.filter(billTopic => this.formatDateMonth(billTopic['dateObj']) == month).length );
 			let minCountByMonthFormatted = Math.min.apply(null, countByMonthFormatted);
     	let maxCountByMonthFormatted = Math.max.apply(null, countByMonthFormatted);
 			let minCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(minCountByMonthFormatted)]
 			let maxCountByMonthFormatted_label = uniqueMonthFormatted[countByMonthFormatted.indexOf(maxCountByMonthFormatted)]
 
-			let uniqueWeekdayFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateWeekday(new Date(billTopic['date'])) )) ].sort(this.sortNumber).sort(sortWeekdays);
-			let countByWeekdayFormatted = uniqueWeekdayFormatted.map( weekday => bill_topics_column.filter(billTopic => this.formatDateWeekday(new Date(billTopic['date'])) == weekday).length );
+			let uniqueWeekdayFormatted = [ ...new Set(bill_topics_column.map( billTopic => this.formatDateWeekday(billTopic['dateObj']) )) ].sort(this.sortNumber).sort(sortWeekdays);
+			let countByWeekdayFormatted = uniqueWeekdayFormatted.map( weekday => bill_topics_column.filter(billTopic => this.formatDateWeekday(billTopic['dateObj']) == weekday).length );
 			let minCountByWeekdayFormatted = Math.min.apply(null, countByWeekdayFormatted);
     	let maxCountByWeekdayFormatted = Math.max.apply(null, countByWeekdayFormatted);
 			let minCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(minCountByWeekdayFormatted)]
