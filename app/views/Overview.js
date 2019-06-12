@@ -119,12 +119,44 @@ class Overview extends React.Component {
 			let minCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(minCountByWeekdayFormatted)]
 			let maxCountByWeekdayFormatted_label = uniqueWeekdayFormatted[countByWeekdayFormatted.indexOf(maxCountByWeekdayFormatted)]
 
-			let unique1 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['1'])) ];
-			let unique2 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['2'])) ];
-			let unique3 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['3'])) ];
-			let unique4 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['4'])) ];
-			let unique5 = [ ...new Set(bill_topics_column.map( billTopic => billTopic['5'])) ];
-			let uniqueTopics = [...new Set([...unique1 ,...unique2, ...unique3, ...unique4, ...unique5,])].sort();
+
+			let topicBreakdown = {
+					'all': {}
+			}
+			for(let i=1; i< 6; i++){
+				let uniqueTopics = [ ...new Set(bill_topics_column.map( billTopic => billTopic[i])) ].sort();
+				let countByTopic = uniqueTopics.map( topicName => {
+					let count = bill_topics_column.filter(billTopic => billTopic[i] == topicName).length
+					if( !topicBreakdown['all'][topicName] )
+						topicBreakdown['all'][topicName] = 0;
+					topicBreakdown['all'][topicName] += count;
+					return count
+				});
+				let minCountByTopic = Math.min.apply(null, countByTopic);
+				let maxCountByTopic = Math.max.apply(null, countByTopic);
+				let minCountByTopic_label = uniqueTopics[countByTopic.indexOf(minCountByTopic)]
+				let maxCountByTopic_label = uniqueTopics[countByTopic.indexOf(maxCountByTopic)]
+				topicBreakdown[i] = {
+					uniqueTopics: uniqueTopics,
+					countByTopic: countByTopic,
+					minCountByTopic: minCountByTopic,
+					maxCountByTopic: maxCountByTopic,
+					minCountByTopic_label: minCountByTopic_label,
+					maxCountByTopic_label: maxCountByTopic_label
+				}
+			}
+			// largest number first
+			let sortTopics = (a,b) => {
+				return b.count - a.count
+			}
+			let uniqueTopics = Object.keys(topicBreakdown['all']).sort();
+			let countByTopic = uniqueTopics.map( topicName => {
+				return {'name': topicName, 'count': topicBreakdown['all'][topicName]}
+			}).sort(sortTopics);
+			let minCountByTopic = countByTopic[countByTopic.length-1].count
+			let maxCountByTopic = countByTopic[0].count
+			let minCountByTopic_label = countByTopic[countByTopic.length-1].name
+			let maxCountByTopic_label = countByTopic[0].name
 
 			let uniqueDates = [ ...new Set(bill_topics_column.map( billTopic => billTopic['date'])) ].sort(this.sortNumber);
 			let minDate = new Date(Math.min.apply(null, uniqueDates));
@@ -137,6 +169,10 @@ class Overview extends React.Component {
 			let monthFormattedData = this.buildChartTemplate('Activity by Month', uniqueMonthFormatted, countByMonthFormatted)
 
 			let weekdayFormattedData = this.buildChartTemplate('Activity by Weekday', uniqueWeekdayFormatted, countByWeekdayFormatted)
+
+			let labely = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
+			let valuess = countByTopic.slice( 0, 5).map(countTopic=>countTopic.count)
+			let topicData = this.buildChartTemplate('Activity by Topic', labely ,  valuess)
 
 			let options = {
 				legend:{
@@ -241,6 +277,26 @@ class Overview extends React.Component {
 										<Grid item xs={4}>
 											<Typography variant="h6">
 												Looking over the records by weekday we can see that <b>{minCountByWeekdayFormatted_label} has the least total activity</b> of {minCountByWeekdayFormatted} records and <b>{maxCountByWeekdayFormatted_label} has the most total activity</b> of {maxCountByWeekdayFormatted} records.
+											</Typography>
+										</Grid>
+									</Grid>
+								</CardContent>
+							</Card>
+						</Grid>
+
+						<Grid item xs={8}>
+							<Card>
+								<CardHeader
+									title="Exploring data by topic (Top 5)"
+								/>
+								<CardContent>
+									<Grid container spacing={16}>
+										<Grid item xs={8}>
+											<Bar data={topicData} options={options}/>
+										</Grid>
+										<Grid item xs={4}>
+											<Typography variant="h6">
+												Looking over the records by weekday we can see that <b>{minCountByTopic_label} has the least total activity</b> of {minCountByTopic} records and <b>{maxCountByTopic_label} has the most total activity</b> of {maxCountByTopic} records.
 											</Typography>
 										</Grid>
 									</Grid>
