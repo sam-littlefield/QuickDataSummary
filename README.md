@@ -1,5 +1,5 @@
 # QuickDataSummary
-Small application used to quickly summarize some simple json data sets using npm, react, webpack, d3, and material ui
+Small application used to quickly summarize some simple json data sets using npm, react, webpack, chartjs, and material ui
 
 To start project...
 1) npm i
