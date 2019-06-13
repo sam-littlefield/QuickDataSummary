@@ -123,13 +123,11 @@ class Overview extends React.Component {
 			}
 		});
 		return offendingRecords.filter(billTopic=> !!billTopic)
-
 	}
 	buildMonthStatistics = () => {
 		let sortMonths = (a,b) => {
 			return monthLabels.indexOf(a) - monthLabels.indexOf(b)
 		}
-
 		let uniqueMonth = [ ...new Set(this.state.bill_topics_column.map( billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4))) ) ].sort(this.sortNumber);
 		let countByMonth = uniqueMonth.map( month => this.state.bill_topics_column.filter(billTopic => Math.trunc((billTopic['YearMonth']+'').substring(4)) == month).length );
 		let minCountByMonth = Math.min.apply(null, countByMonth);
@@ -225,16 +223,38 @@ class Overview extends React.Component {
 		return {topicBreakdown:topicBreakdown}
 	}
 	buildDateStatistics = () => {
-		let uniqueDates = [ ...new Set(this.state.bill_topics_column.map( billTopic => billTopic['date'])) ].sort(this.sortNumber);
-		let minDate = new Date(Math.min.apply(null, uniqueDates));
-		let maxDate = new Date(Math.max.apply(null, uniqueDates));
+		let sortDates = (a,b) => {
+			return b.count - a.count
+		}
+		let truncateDate = (date)=>{
+			date.setHours(0);
+			date.setMinutes(0);
+			date.setSeconds(0);
+			date.setMilliseconds(0);
+			return date
+		}
+		//Populate with unique dates
+		let dateCounts = {}
+		this.state.bill_topics_column.forEach( billTopic => {
+			let convertedDate  = truncateDate(billTopic['dateObj']).getTime()
+			if( !dateCounts[convertedDate] )
+				dateCounts[convertedDate] = 0;
+			dateCounts[convertedDate] += 1;
+		})
+		//
+		let uniqueDates = Object.keys(dateCounts).sort(this.sortNumber);
+		let dateCountsArr = uniqueDates.map( date => {
+			return {'name': this.formatDate(new Date(Math.trunc(date))), 'count': dateCounts[date]}
+		})
+		dateCountsArr.sort(sortDates)
+
 		return {
 			'date': {
-				'uniqueValues': uniqueDates,
-				'minValue': minDate,
-				'maxValue': maxDate,
-				'minValue_label': this.formatDate(minDate),
-				'maxValue_label': this.formatDate(maxDate),
+				'countByUniqueArr': dateCountsArr,
+				'minValue': dateCountsArr[dateCountsArr.length-1].count,
+				'maxValue': dateCountsArr[0].count,
+				'minValue_label': dateCountsArr[dateCountsArr.length-1].name,
+				'maxValue_label': dateCountsArr[0].name,
 			}
 		}
 	}
@@ -284,6 +304,10 @@ class Overview extends React.Component {
 
 			let weekdayFormattedData = this.buildChartTemplate('Bills by Weekday', this.state.weekday.uniqueValues, this.state.weekday.countByUnique,'bar')
 
+			let countByDate_labels = this.state.date.countByUniqueArr.slice( 0, 5).map(countTopic=>countTopic.name)
+			let countByDate_values = this.state.date.countByUniqueArr.slice( 0, 5).map(countTopic=>countTopic.count)
+		  let dateData = this.buildChartTemplate('Bill per Day', countByDate_labels, countByDate_values)
+
 			let topicCategory = this.state.selectedTopicLevel
 			let countByTopic = this.state.topicBreakdown[topicCategory]['countByUniqueArr']
 			let countByTopic_labels = countByTopic.slice( 0, 5).map(countTopic=>countTopic.name)
@@ -318,7 +342,7 @@ class Overview extends React.Component {
 												Records are tagged with a total of <b>{countByTopic.length} distinct topics</b>.
 											</Typography>
 											<Typography variant="h6" noWrap>
-												Data spans from <b>{ this.state.date.minValue_label } to { this.state.date.maxValue_label }</b>, covering <b>{this.state.date.uniqueValues.length} unique dates</b> over <b>{this.state.year.countByUnique.length} different years</b>.
+												Data spans from <b>{ this.state.date.minValue_label } to { this.state.date.maxValue_label }</b>, covering <b>{this.state.date.countByUniqueArr.length} unique dates</b> over <b>{this.state.year.countByUnique.length} different years</b>.
 											</Typography>
 										</Grid>
 									</Grid>
@@ -388,6 +412,7 @@ class Overview extends React.Component {
 											</Button>
 											<FullScreenTableDialog buttonName={"View Inconsistencies"} title={"Inconsistent Dates"} rows={this.buildOffendingMonthRecords()} columns={columns}/>
 										</Grid>
+
 									</Grid>
 
 								</CardContent>
@@ -419,15 +444,35 @@ class Overview extends React.Component {
 						<Grid item xs={8}>
 							<Card>
 								<CardHeader
-									title={`Exploring data by topic assignment (Top 5)`}
+									title="Exploring data by date"
 								/>
 								<CardContent>
 									<Grid container spacing={16}
 												justify="center"
 												alignItems="center">
 										<Grid item xs={8}>
-											<Bar data={topicData} options={options}/>
+											<Bar data={dateData} options={options}/>
 										</Grid>
+										<Grid item xs={4}>
+											<Typography variant="h6">
+												Here we see data broken down by date we can see that <b>{this.state.date.minValue_label} has the least total activity</b> at {this.state.date.minValue} record{this.state.date.minValue>1?'s':null} and <b>{this.state.date.maxValue_label} has the most total activity</b> at {this.state.date.maxValue} records.
+											</Typography>
+										</Grid>
+
+									</Grid>
+								</CardContent>
+							</Card>
+						</Grid>
+
+						<Grid item xs={8}>
+							<Card>
+								<CardHeader
+									title={`Exploring data by topic assignment (Top 5)`}
+								/>
+								<CardContent>
+									<Grid container spacing={16}
+												justify="center"
+												alignItems="center">
 										<Grid item xs={4}>
 											<Typography variant="h6">
 												We are currently viewing topics by
@@ -451,6 +496,9 @@ class Overview extends React.Component {
 											<Typography variant="h6">
 												Looking over the records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minValue_label']} has the least total activity</b> of {this.state.topicBreakdown[topicCategory]['minValue']} record{this.state.topicBreakdown[topicCategory]['minValue']>1?'s':null} and <b>{this.state.topicBreakdown[topicCategory]['maxValue_label']} has the most total activity</b> of {this.state.topicBreakdown[topicCategory]['maxValue']} records.
 											</Typography>
+										</Grid>
+										<Grid item xs={8}>
+											<Bar data={topicData} options={options}/>
 										</Grid>
 									</Grid>
 								</CardContent>
