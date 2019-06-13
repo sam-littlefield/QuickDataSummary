@@ -408,7 +408,7 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Here we find that <b>{this.state.month.minValue_label} has the least activity</b> with {this.state.month.minValue} records and <b>{this.state.month.maxValue_label} has the most activity</b> with {this.state.month.maxValue} records!
+												In the alternative column we find that <b>{this.state.month.minValue_label} has the least activity</b> with {this.state.month.minValue} records and <b>{this.state.month.maxValue_label} has the most activity</b> with {this.state.month.maxValue} records!
 											</Typography>
 											<Button
 												variant="contained"
@@ -460,7 +460,7 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Here we see data broken down by date and now we can see that <b>{this.state.date.minValue_label} has the least total activity</b> at {this.state.date.minValue} record{this.state.date.minValue>1?'s':null} and <b>{this.state.date.maxValue_label} has the most total activity</b> at {this.state.date.maxValue} records.
+												Exploring data by date we can see that <b>{this.state.date.minValue_label} has the least total activity</b> at {this.state.date.minValue} record{this.state.date.minValue>1?'s':null} and <b>{this.state.date.maxValue_label} has the most total activity</b> at {this.state.date.maxValue} records.
 											</Typography>
 										</Grid>
 
@@ -499,7 +499,7 @@ class Overview extends React.Component {
 												assignment.
 											</Typography>
 											<Typography variant="h6">
-												Looking over the records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minValue_label']} has the least total activity</b> of {this.state.topicBreakdown[topicCategory]['minValue']} record{this.state.topicBreakdown[topicCategory]['minValue']>1?'s':null} and <b>{this.state.topicBreakdown[topicCategory]['maxValue_label']} has the most total activity</b> of {this.state.topicBreakdown[topicCategory]['maxValue']} records.
+												Looking over records by topic we can see that <b>{this.state.topicBreakdown[topicCategory]['minValue_label']} has the least total activity</b> at {this.state.topicBreakdown[topicCategory]['minValue']} record{this.state.topicBreakdown[topicCategory]['minValue']>1?'s':null} and <b>{this.state.topicBreakdown[topicCategory]['maxValue_label']} has the most total activity</b> at {this.state.topicBreakdown[topicCategory]['maxValue']} records.
 											</Typography>
 										</Grid>
 										<Grid item xs={8}>
