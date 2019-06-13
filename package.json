@@ -1,7 +1,7 @@
 {
-  "name": "Recruitment",
+  "name": "QuickDataSummary",
   "version": "1.0.0",
-  "description": "Army recruitment",
+  "description": "QuickDataSummary",
   "main": "index.js",
   "scripts": {
     "watch": "webpack --watch --debug --info-verbosity verbose",
