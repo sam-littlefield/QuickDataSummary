@@ -6,10 +6,21 @@ import Loading from '../components/loading'
 import { Card, CardHeader, CardContent, Grid, Typography, Select, OutlinedInput, MenuItem, FormControl, FormHelperText, Icon, Button} from '@material-ui/core'
 import { Bar } from 'react-chartjs-2';
 import { Warning } from '@material-ui/icons';
-
+import FullScreenTableDialog from './FullScreenTableDialog'
 
 const monthLabels = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const weekdayLabels = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const columns = [
+	{'value':'id','label':'Row Id'},
+	{'value':'date','label':'Date'},
+	{'value':'FormattedYearMonth','label':'Date to Year Month'},
+	{'value':'YearMonth','label':'YearMonth'},
+	{'value':'1','label':'First Topic'},
+	{'value':'2','label':'Second Topic'},
+	{'value':'3','label':'Third Topic'},
+	{'value':'4','label':'Fourth Topic'},
+	{'value':'5','label':'Fifth Topic'},
+]
 
 class Overview extends React.Component {
 	constructor(props){
@@ -102,6 +113,17 @@ class Overview extends React.Component {
 				'maxValue_label': maxCountByYearFormatted_label,
 			}
 		}
+	}
+	buildOffendingMonthRecords = () => {
+		let offendingRecords = this.state.bill_topics_column.map( billTopic => {
+			let formattedYarMonth = this.formatYearMonth(billTopic['dateObj']);
+			if ( billTopic['YearMonth'] !=  formattedYarMonth ){
+				billTopic['FormattedYearMonth'] = formattedYarMonth
+				return billTopic
+			}
+		});
+		return offendingRecords.filter(billTopic=> !!billTopic)
+
 	}
 	buildMonthStatistics = () => {
 		let sortMonths = (a,b) => {
@@ -226,6 +248,9 @@ class Overview extends React.Component {
 				...this.buildTopicStatistics(),
 				loading: false
 			})
+	}
+	formatYearMonth = (date) => {
+		return date.getFullYear()+("0" + (date.getMonth() + 1)).slice(-2)
 	}
 	formatDate = (date) => {
 		return date.toLocaleString('en-us', {year: 'numeric', day:'2-digit', month: 'long'})
@@ -361,6 +386,7 @@ class Overview extends React.Component {
 												onClick={(e)=>this.setState({combineMonthCharts:!this.state.combineMonthCharts}) }>
 												{ this.state.combineMonthCharts? 'Hide comparison':'Show comparison' }
 											</Button>
+											<FullScreenTableDialog buttonName={"View Inconsistencies"} title={"Inconsistent Dates"} rows={this.buildOffendingMonthRecords()} columns={columns}/>
 										</Grid>
 									</Grid>
 
@@ -379,7 +405,7 @@ class Overview extends React.Component {
 												alignItems="center">
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Moving onto the data broken down by weekday we can see that <b>{this.state.weekday.minValue_label} has the least total activity</b> at {this.state.weekday.minValue} record{this.state.weekday.minValue>1?'s':null} and <b>{this.state.weekday.maxValue_label} has the most total activity</b> at {this.state.weekday.maxValue} records.
+												Moving onto data broken down by weekday we can see that <b>{this.state.weekday.minValue_label} has the least total activity</b> at {this.state.weekday.minValue} record{this.state.weekday.minValue>1?'s':null} and <b>{this.state.weekday.maxValue_label} has the most total activity</b> at {this.state.weekday.maxValue} records.
 											</Typography>
 										</Grid>
 										<Grid item xs={8}>
@@ -393,7 +419,7 @@ class Overview extends React.Component {
 						<Grid item xs={8}>
 							<Card>
 								<CardHeader
-									title={`Exploring data by topic (Top 5) by topic assignment`}
+									title={`Exploring data by topic assignment (Top 5)`}
 								/>
 								<CardContent>
 									<Grid container spacing={16}
@@ -445,7 +471,6 @@ class Overview extends React.Component {
 						<CardHeader
 							title="Please wait..."
 						/>
-
 						<CardContent>
 							<Loading/>
 							{this.state.bill_topics_column.length > 0 ? `Processing ${this.state.bill_topics_column.length} Records`: null }
