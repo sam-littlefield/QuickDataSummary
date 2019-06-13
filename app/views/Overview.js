@@ -250,11 +250,16 @@ class Overview extends React.Component {
 
 		return {
 			'date': {
+				'uniqueDates': uniqueDates,
 				'countByUniqueArr': dateCountsArr,
 				'minValue': dateCountsArr[dateCountsArr.length-1].count,
 				'maxValue': dateCountsArr[0].count,
 				'minValue_label': dateCountsArr[dateCountsArr.length-1].name,
 				'maxValue_label': dateCountsArr[0].name,
+				'earliest': uniqueDates[0],
+				'earliest_label': this.formatDate(new Date(Math.trunc(uniqueDates[0]))),
+				'latest': uniqueDates[uniqueDates.length-1],
+				'latest_label': this.formatDate(new Date(Math.trunc(uniqueDates[uniqueDates.length-1]))),
 			}
 		}
 	}
@@ -320,7 +325,7 @@ class Overview extends React.Component {
 				}
 			}
 			return (
-				<div>
+				<div className="contentContainer">
 					<Grid container spacing={16}
 								direction="column"
 								justify="center"
@@ -342,7 +347,7 @@ class Overview extends React.Component {
 												Records are tagged with a total of <b>{countByTopic.length} distinct topics</b>.
 											</Typography>
 											<Typography variant="h6" noWrap>
-												Data spans from <b>{ this.state.date.minValue_label } to { this.state.date.maxValue_label }</b>, covering <b>{this.state.date.countByUniqueArr.length} unique dates</b> over <b>{this.state.year.countByUnique.length} different years</b>.
+												Data spans from <b>{ this.state.date.earliest_label } to { this.state.date.latest_label }</b>, covering <b>{this.state.date.countByUniqueArr.length} unique dates</b> over <b>{this.state.year.countByUnique.length} different years</b>.
 											</Typography>
 										</Grid>
 									</Grid>
@@ -391,7 +396,7 @@ class Overview extends React.Component {
 										</Grid>
 
 										<Grid item xs={2}></Grid>
-										<Grid item xs={8} className='warning-message'>
+										<Grid item xs={8} className='warningMessage'>
 											<Typography variant="h5">
 												<Warning color="error"/>Comparing month information in two columns we find <b>conflicting information</b> is present in the data!<Warning color='error'/>
 											</Typography>
@@ -455,7 +460,7 @@ class Overview extends React.Component {
 										</Grid>
 										<Grid item xs={4}>
 											<Typography variant="h6">
-												Here we see data broken down by date we can see that <b>{this.state.date.minValue_label} has the least total activity</b> at {this.state.date.minValue} record{this.state.date.minValue>1?'s':null} and <b>{this.state.date.maxValue_label} has the most total activity</b> at {this.state.date.maxValue} records.
+												Here we see data broken down by date and now we can see that <b>{this.state.date.minValue_label} has the least total activity</b> at {this.state.date.minValue} record{this.state.date.minValue>1?'s':null} and <b>{this.state.date.maxValue_label} has the most total activity</b> at {this.state.date.maxValue} records.
 											</Typography>
 										</Grid>
 
@@ -510,22 +515,24 @@ class Overview extends React.Component {
 			)
 		}
 		return (
-			<Grid container spacing={16}
-						direction="column"
-						justify="center"
-						alignItems="center">
-				<Grid item xs={8} className='warning-message'>
-					<Card>
-						<CardHeader
-							title="Please wait..."
-						/>
-						<CardContent>
-							<Loading/>
-							{this.state.bill_topics_column.length > 0 ? `Processing ${this.state.bill_topics_column.length} Records`: null }
-						</CardContent>
-					</Card>
+			<div className="contentContainer">
+				<Grid container spacing={16}
+							direction="column"
+							justify="center"
+							alignItems="center">
+					<Grid item xs={8} className='warning-message'>
+						<Card>
+							<CardHeader
+								title="Please wait..."
+							/>
+							<CardContent>
+								<Loading/>
+								{this.state.bill_topics_column.length > 0 ? `Processing ${this.state.bill_topics_column.length} Records`: null }
+							</CardContent>
+						</Card>
+					</Grid>
 				</Grid>
-			</Grid>
+			</div>
 		)
 	}
 }

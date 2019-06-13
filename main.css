@@ -5,6 +5,9 @@ div.inlineTextSelectButton {
   padding-left: 10px;
   padding-right: 10px;
 }
-div.warning-message {
+div.warningMessage {
   text-align: center;
+}
+div.contentContainer {
+  padding-top: 10px;
 }
